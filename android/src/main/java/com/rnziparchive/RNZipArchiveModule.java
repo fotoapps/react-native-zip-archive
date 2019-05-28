@@ -127,7 +127,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
             //noinspection ResultOfMethodCallIgnored
             destDir.mkdirs();
           }
-
+          String destDirCanonicalPath = destDir.getCanonicalPath();
           updateProgress(0, 1, zipFilePath); // force 0%
 
           // We use arrays here so we can update values
@@ -141,6 +141,17 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
           while (entries.hasMoreElements()) {
             final ZipEntry entry = entries.nextElement();
             if (entry.isDirectory()) continue;
+
+            File fout = new File(destDirectory, entry.getName());
+            String canonicalPath = fout.getCanonicalPath();
+            if (!canonicalPath.startsWith(destDirCanonicalPath)) {
+              // SecurityException
+              continue;
+            }
+            if (!fout.exists()) {
+              //noinspection ResultOfMethodCallIgnored
+              (new File(fout.getParent())).mkdirs();
+            }
 
             StreamUtil.ProgressCallback cb = new StreamUtil.ProgressCallback() {
               @Override
@@ -158,11 +169,6 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
               }
             };
 
-            File fout = new File(destDirectory, entry.getName());
-            if (!fout.exists()) {
-              //noinspection ResultOfMethodCallIgnored
-              (new File(fout.getParent())).mkdirs();
-            }
             InputStream in = null;
             BufferedOutputStream Bout = null;
             try {
@@ -232,6 +238,7 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
               //noinspection ResultOfMethodCallIgnored
               destDir.mkdirs();
             }
+            String destDirCanonicalPath = destDir.getCanonicalPath();
             ZipInputStream zipIn = new ZipInputStream(assetsInputStream);
             BufferedInputStream bin = new BufferedInputStream(zipIn);
 
@@ -245,6 +252,10 @@ public class RNZipArchiveModule extends ReactContextBaseJavaModule {
             while ((entry = zipIn.getNextEntry()) != null) {
               if (entry.isDirectory()) continue;
               fout = new File(destDirectory, entry.getName());
+              String canonicalPath = fout.getCanonicalPath();
+              if (!canonicalPath.startsWith(destDirCanonicalPath)) {
+                continue;
+              }
               if (!fout.exists()) {
                 //noinspection ResultOfMethodCallIgnored
                 (new File(fout.getParent())).mkdirs();
